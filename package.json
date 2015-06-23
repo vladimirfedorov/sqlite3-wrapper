@@ -1,11 +1,11 @@
 {
     "name": "sqlite3-wrapper",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Sweet sqlite3 wrapper that uses objects instead of strings to query records.",
     "keywords": ["sqlite","sqlite3","object","wrapper","select","update","insert","delete","CRUD"],
     "repository": {
         "type": "git",
-        "url": "https://vladimirfedorov.github.com/sqlite3-wrapper"
+        "url": "https://github.com/vladimirfedorov/sqlite3-wrapper"
     },
     "main": "index.js",
     "dependencies": {
