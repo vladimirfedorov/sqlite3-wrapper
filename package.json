@@ -9,7 +9,9 @@
     },
     "main": "index.js",
     "dependencies": {
-        "sqlite3": "~3.0.0",
+        "sqlite3": "~3.0.0"
     },
-    "engines": { "node": "*" }
+    "engines": { 
+        "node": "*" 
+    }
 }
