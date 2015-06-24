@@ -1,23 +1,26 @@
 var sqlite = require('sqlite3').verbose(),
     db,
     self_name = 'sqlite3-wrapper',
-    logQueries = false;
+    logQueries = false
 
 module.exports.open = function(databaseName) {
-    if (db) db.close();
-    db = new sqlite.Database(databaseName);
+    if (db) db.close()
+    db = new sqlite.Database(databaseName)
+    return this
 }
 
 module.exports.close = function() {
     if (db) db.close()
+    return this
 }
 
 module.exports.database = function() {
-    return db;
+    return db
 }
 
 module.exports.logQueries = function(b) {
-    logQueries = b;
+    logQueries = b
+    return this
 }
 
 // Select expects param to be either a string 
@@ -43,11 +46,11 @@ module.exports.select = function(params, cb) {
         limitString  = '',
         offsetString = '',
         orderString  = '',
-        queryString  = '';
+        queryString  = ''
     
     if (db === undefined) {
-        console.log('Open database first');
-        return;
+        console.log('Open database first')
+        return
     }
     
     if (typeof params === 'string') {
@@ -55,25 +58,25 @@ module.exports.select = function(params, cb) {
     } else if (typeof params === 'object') {
         tableString = safeName(params.table || '');
         if (tableString === '') {
-            console.error('Table is not specified ', params);
-            if (cb) cb(undefined, []);
-            return;
+            console.error('Table is not specified ', params)
+            if (cb) cb(undefined, [])
+            return
         }
-        fieldsString = (Object.prototype.toString.call(params.fields) === '[object Array]' ? params.fields.join(', ') : params.fields) || '*';
-        whereObj = makeWhereStringAndParams(params.where || '');
-        limitString = (params.limit && ' limit ' + params.limit) || '';
-        offsetString = (params.offset && ' offset ' + params.offset) || '';
-        orderString = (params.order && ' order by ' + params.order) || '';
-        queryString = 'select ' + fieldsString + ' from ' + tableString + whereObj.string + orderString + limitString + offsetString;
-        queryParams = whereObj.params;
+        fieldsString = (Object.prototype.toString.call(params.fields) === '[object Array]' ? params.fields.join(', ') : params.fields) || '*'
+        whereObj = makeWhereStringAndParams(params.where || '')
+        limitString = (params.limit && ' limit ' + params.limit) || ''
+        offsetString = (params.offset && ' offset ' + params.offset) || ''
+        orderString = (params.order && ' order by ' + params.order) || ''
+        queryString = 'select ' + fieldsString + ' from ' + tableString + whereObj.string + orderString + limitString + offsetString
+        queryParams = whereObj.params
     } else {
-        console.log('First argument in select must be either a string or an object');
-        if (cb) cb(undefined, []);
-        return;
+        console.log('First argument in select must be either a string or an object')
+        if (cb) cb(undefined, [])
+        return
     }
     
-    if (logQueries) console.log(queryString, queryParams);
-    db.all(queryString, queryParams, cb);
+    if (logQueries) console.log(queryString, queryParams)
+    db.all(queryString, queryParams, cb)
 }
 
 module.exports.insert = function(table, record, cb) {
@@ -83,19 +86,19 @@ module.exports.insert = function(table, record, cb) {
         fieldsValues = [],
         queryParams = [],
         recordObj = record || {},
-        k;
+        k
     
     tableString = safeName(table);
     for (k in recordObj)  {
-        fields.push(k);
-        fieldsValues.push('?');
-        queryParams.push(record[k]);
+        fields.push(k)
+        fieldsValues.push('?')
+        queryParams.push(record[k])
     }
-    queryString = 'insert into ' + tableString + ' (' +  fields.join(', ') + ') values (' + fieldsValues.join(', ') + ')';
+    queryString = 'insert into ' + tableString + ' (' +  fields.join(', ') + ') values (' + fieldsValues.join(', ') + ')'
     
     if (logQueries) console.log(queryString, queryParams)
     db.run(queryString, queryParams, function(error){
-        if (cb) cb(error, this.lastID);
+        if (cb) cb(error, this.lastID)
     })
 }
 
@@ -106,30 +109,30 @@ module.exports.update = function(table, where, record, cb) {
         whereObj = makeWhereStringAndParams(where),
         fields = [],
         queryParams = [],
-        k;
+        k
     
     if (tableString === undefined) {
-        logError('update', 'table is undefined');
+        logError('update', 'table is undefined')
         if (cb) cb(undefined, 0)
-        return;
+        return
     }
         
     for (k in recordObj) {
-        fields.push(k + ' = ?');
-        queryParams.push(recordObj[k]);
+        fields.push(k + ' = ?')
+        queryParams.push(recordObj[k])
     }
     
     if (fields.length === 0) {
-        if (cb) cb(undefined, 0);
+        if (cb) cb(undefined, 0)
         return;
     }
     
     queryParams = queryParams.concat(whereObj.params)
-    queryString = 'update ' + tableString + ' set ' + fields.join(', ') + whereObj.string;
+    queryString = 'update ' + tableString + ' set ' + fields.join(', ') + whereObj.string
         
     if (logQueries) console.log(queryString, queryParams)
     db.run(queryString, queryParams, function(error) {
-        if (cb) cb(error, this.changes);
+        if (cb) cb(error, this.changes)
     });
 }
 
@@ -139,16 +142,16 @@ module.exports.delete = function(table, where, cb) {
         queryString = ''
 
     if (tableString === undefined) {
-        logError('delete', 'table is undefined');
-        if (cb) cb(undefined, 0);
-        return;
+        logError('delete', 'table is undefined')
+        if (cb) cb(undefined, 0)
+        return
     }
         
     queryString = 'delete from ' + tableString + whereObj.string
     if (logQueries) console.log(queryString, whereObj.params)
     db.run(queryString, whereObj.params, function(error) {
-        if (cb) cb(error, this.changes);
-    });    
+        if (cb) cb(error, this.changes)
+    })
 }
 
 function logError(func, text) {
@@ -156,7 +159,7 @@ function logError(func, text) {
 }
     
 function safeName(name) {
-    return ((name || '').match(/[a-zA-Z0-9_]+/) || [])[0];
+    return ((name || '').match(/[a-zA-Z0-9_]+/) || [])[0]
 }
 
 // Converts where clause object to where.string and where.params to use in query
@@ -164,22 +167,22 @@ function makeWhereStringAndParams(where) {
     var whereObj = where || {},
         result = {string: '', params: []},
         fields = [],
-        k;
+        k
     
     // Two cases of where object: 
     // 1) simple where object with keys for field names and values for field values
     // 2) .clause with a query string (e.g. "name like ? OR surname like ?"), .params with parameter values
     if (whereObj.clause && whereObj.clause.length > 0) {
-        result.string = ' where ' + whereObj.clause;
-        result.params = whereObj.params || [];
+        result.string = ' where ' + whereObj.clause
+        result.params = whereObj.params || []
     } else {
         for (k in whereObj) {
-            fields.push(k + ' = ?');
-            result.params.push(whereObj[k]);
+            fields.push(k + ' = ?')
+            result.params.push(whereObj[k])
         }
         if (fields.length > 0) {
-            result.string = ' where ' + fields.join(' and ');
+            result.string = ' where ' + fields.join(' and ')
         }
     }
-    return result;
+    return result
 }
