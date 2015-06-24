@@ -1,6 +1,6 @@
 {
     "name": "sqlite3-wrapper",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Sweet sqlite3 wrapper that uses objects instead of strings to query records.",
     "keywords": ["sqlite","sqlite3","object","wrapper","select","update","insert","delete","CRUD"],
     "repository": {
