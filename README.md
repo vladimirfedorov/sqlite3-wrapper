@@ -46,26 +46,28 @@ To see queries that the `sqlite3-wrapper` produces, call `db.logQueries(true)`: 
 
 ## where
 
-`where` clause is an object, too. It has two forms (examples below effectively become `where parentId = 8341 and isLeaf = 1`):
+`where` clause is an object, too. It has two forms:
 
-1. Keys for table field names, values for field values (e. g., `{ parentId: 8341, isLeaf: 1 }`);
+1. Keys for table field names, values for field values (e. g., `{ parentId: 8341, isLeaf: 1 }`)
 2. Where clause (string) and params array (`{ clause: "where parentId = ? and isLeaf = ?", params: [8341, 1] }`)
+
+Examples above effectively become `where parentId = 8341 and isLeaf = 1`.
 
 ## select(query, callback)
 
 - **query**: an object, possible properties:
-    - table (required, string): table name
-    - fields (optional, string or array of strings): fields to return, e. g. ["title", "price"]
-    - limit (optional, integer): maximum number of records to return
-    - offset (optional, integer): number of records to skip
-    - order (optional, string): order, e.g. "name desc"
-    - where (optional): `where` object
+    - **table** (required, string): table name
+    - **fields** (optional, string or array of strings): fields to return, e. g. ["title", "price"]
+    - **limit** (optional, integer): maximum number of records to return
+    - **offset** (optional, integer): number of records to skip
+    - **order** (optional, string): order, e.g. "name desc"
+    - **where** (optional): `where` object
     
     It is also possible to pass a query string instead of a query object, `db.select('select distinct category from records', ...)`.
     
 - **callback** - (error, rows)
-    - error: `sqlite3` error
-    - rows: array of rows that match the query
+    - **error**: `sqlite3` error
+    - **rows**: array of rows that match the query
 
 ## update(table, where, changes, callback)
 
@@ -73,20 +75,20 @@ To see queries that the `sqlite3-wrapper` produces, call `db.logQueries(true)`: 
 - **where**: `where` object
 - **changes**: an object with fields to update and their values, e. g. `{username: "John", password: "12345"}`
 - **callback** - (error, changes)
-    - error: `sqlite3` error
-    - changes: number of rows changed
+    - **error**: `sqlite3` error
+    - **changes**: number of rows changed
     
 ## insert(table, row, callback)
 - **table**: table name
 - **row**: an object to insert to the database, e. g. `{username: "John", password: "12345"}`
 - **callback** - (error, id)
-    - error: `sqlite3` error
-    - id: id of the new row created, 0 if error
+    - **error**: `sqlite3` error
+    - **id**: id of the new row created, 0 if error
     
 ## delete(table, where, callback)
 - **table**: table name
 - **where**: `where` object
 - **callback** - (error, changes)
-    - error: `sqlite3` error
-    - changes: number of rows deleted
+    - **error**: `sqlite3` error
+    - **changes**: number of rows deleted
 
