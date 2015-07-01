@@ -1,5 +1,7 @@
 # sqlite3-wrapper
 
+[![NPM](https://nodei.co/npm/sqlite3-wrapper.png?downloads=true)](https://nodei.co/npm/sqlite3-wrapper/)
+
 ## Features
 
 As you know, it is much easier to work with database using objects instead of string queries:
