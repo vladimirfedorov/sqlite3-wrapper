@@ -164,7 +164,7 @@ module.exports.delete = function(table, where, cb) {
 //      'children_field_name' is a name for a new field to contain child rows,
 //      'id_field_name' is parent ID field name,
 //      'parent_field_name' is parent reference field name
-//      returns an array of rows without parent rows, containing children rows inside children field object
+//      returns an array of parent rows, containing children rows inside children field object
 module.exports.group = function(params) {
     var p = params || {},
         rows = p.rows || [],
