@@ -49,7 +49,7 @@ module.exports.select = function(params, cb) {
         queryString  = ''
     
     if (db === undefined) {
-        console.log('Open database first')
+        console.log('Database is not specified')
         return
     }
     
@@ -154,7 +154,18 @@ module.exports.delete = function(table, where, cb) {
     })
 }
 
-module.export.group = function(params) {
+// Group table rows
+// params: an object, possible values:
+//  1)  {rows: tableRows, by: 'field_name'}
+//      group by 'field_name' field value
+//      returns an object with 'field_name' values as keys, rows as values {'': [rows]}
+//  2)  {rows: tableRows, children: 'children_field_name', parentId: 'id_field_name', parentRef: 'parent_field_name'}
+//      group using parent-child relations, where
+//      'children_field_name' is a name for a new field to contain child rows,
+//      'id_field_name' is parent ID field name,
+//      'parent_field_name' is parent reference field name
+//      returns an array of rows without parent rows, containing children rows inside children field object
+module.exports.group = function(params) {
     var p = params || {},
         rows = p.rows || [],
         byField = p.by,
@@ -167,19 +178,6 @@ module.export.group = function(params) {
         return maketree(rows, childrenField, parentId, parentRef)
     }
 }
-
-/*
-var rows = [
-    {"id": 123, "name": "zozo", "code": 5, "parent": 1},
-    {"id": 2,   "name": "poui", "code": 9, "parent": 1},
-    {"id": 144,   "name": "qwer", "code": 5, "parent": 123},
-    {"id": 18,  "name": "asdf", "code": 9, "parent": 123},
-    {"id": 118,  "name": "asdf", "code": 9, "parent": 15},
-    {"id": 1,  "name": "asdf", "code": 9, "parent": 0},
-    {"id": 15,  "name": "asdf", "code": 9, "parent": 0}
-    ]
-*/
-
 
 function makegroup(rows, field, addEmpty) {
     var result = {}
@@ -195,8 +193,6 @@ function makegroup(rows, field, addEmpty) {
     })
     return result
 }
-
-// maketree(rows, "children", "id", "parent")
 
 function maketree(rows, childrenName, parentId, parentRef) {
     var result = [],
@@ -226,8 +222,6 @@ function maketree(rows, childrenName, parentId, parentRef) {
             var id = row[parentId] || ''
             row[childrenName] = children(id)
         })
-        console.log('Children for id ' + id)
-        console.log(items)
         return items
     }
 
