@@ -154,6 +154,107 @@ module.exports.delete = function(table, where, cb) {
     })
 }
 
+module.export.group = function(params) {
+    var p = params || {},
+        rows = p.rows || [],
+        byField = p.by,
+        childrenField = p.children,
+        parentId = p.parentId,
+        parentRef = p.parentRef
+    if (byField !== undefined) {
+        return makegroup(rows, byField, false)
+    } else if (childrenField !== undefined && parentRef !== undefined && parentId !== undefined) {
+        return maketree(rows, childrenField, parentId, parentRef)
+    }
+}
+
+/*
+var rows = [
+    {"id": 123, "name": "zozo", "code": 5, "parent": 1},
+    {"id": 2,   "name": "poui", "code": 9, "parent": 1},
+    {"id": 144,   "name": "qwer", "code": 5, "parent": 123},
+    {"id": 18,  "name": "asdf", "code": 9, "parent": 123},
+    {"id": 118,  "name": "asdf", "code": 9, "parent": 15},
+    {"id": 1,  "name": "asdf", "code": 9, "parent": 0},
+    {"id": 15,  "name": "asdf", "code": 9, "parent": 0}
+    ]
+*/
+
+
+function makegroup(rows, field, addEmpty) {
+    var result = {}
+    rows.forEach(function(row) {
+        var val = row[field],
+            v = '' + (val || '')
+        if ((addEmpty === true) || (addEmpty !== true && v !== undefined)) {
+            if (result[v] === undefined) {
+                result[v] = []
+            }
+            result[v].push(row)
+        }
+    })
+    return result
+}
+
+// maketree(rows, "children", "id", "parent")
+
+function maketree(rows, childrenName, parentId, parentRef) {
+    var result = [],
+        ids = [],
+        parentRows = [],
+        skip = []
+
+    // Clean up rows that were found before
+    function cleanUpRows() {
+        rows = rows.filter(function(r, i) {
+            return (skip.indexOf(i) === -1)
+        })
+        skip = []
+    }
+
+    // Find children for row's parent id
+    function children(id) {
+        var items = []
+        rows.forEach(function(r, i) {
+            if (skip.indexOf(i) === -1 && r[parentRef] === id) {
+                items.push(r)
+                skip.push(i)
+            }
+        })
+        cleanUpRows()
+        items.forEach(function(row) {
+            var id = row[parentId] || ''
+            row[childrenName] = children(id)
+        })
+        console.log('Children for id ' + id)
+        console.log(items)
+        return items
+    }
+
+    // Get parent rows
+    // Collect all ids
+    ids = rows.map(function(r) {
+        return r[parentId] || ''
+    })
+    // Filter rows - get only rows that have no parent
+    result = rows.filter(function(r, i) {
+        var ref = r[parentRef] || ''
+        if (ids.indexOf(ref) === -1) {
+            skip.push(i)
+            return true
+        }
+        return false
+    })
+    cleanUpRows()
+    // Iterate over parent rows and collect children rows
+    result.forEach(function(row) {
+        var id = row[parentId] || ''
+        row[childrenName] = children(id)
+    })
+    // Done
+    return result
+}
+
 function logError(func, text) {
     console.error('[' + self_name + '.' + func + ']: ' + text)
 }
