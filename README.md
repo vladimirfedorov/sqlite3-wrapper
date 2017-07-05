@@ -96,13 +96,13 @@ Examples above effectively become `where parentId = 8341 and isLeaf = 1`.
 
 ## group(params)
 **group** function returns groupped rows in one of possible ways:
-- **params**: object with possible parameters:
+- **params**: object with parameters:
     - **rows**: database rows
     - **by**: field name
 
 returns an object with **by** field values as keys and array of matching rows with corresponding field value as values
 
-- **params**: object with possible parameters:
+- **params**: object with parameters:
     - **rows**: database rows
     - **children**: a name of a new field that will be added to each row to store child rows
     - **parentId**: parent ID field name
