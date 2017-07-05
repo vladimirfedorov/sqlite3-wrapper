@@ -94,3 +94,17 @@ Examples above effectively become `where parentId = 8341 and isLeaf = 1`.
     - **error**: `sqlite3` error
     - **changes**: number of rows deleted
 
+## group(params)
+**group** function returns groupped rows in one of possible ways:
+- **params*: object with possible parameters:
+    - **rows**: database rows
+    - **by**: field name
+returns an object with **by** field values as keys and array of matching rows with corresponding field value as values
+
+- **params*: object with possible parameters:
+    - **rows**: database rows
+    - **children**: a name of a new field that will be added to each row to store child rows
+    - **parentId**: parent ID field name
+    - **parentRef**: parent reference field name
+returns an array of parent rows containing children rows in **children** property
+    
