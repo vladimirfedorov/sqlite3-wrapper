@@ -108,5 +108,5 @@ returns an object with **by** field values as keys and array of matching rows wi
     - **parentId**: parent ID field name
     - **parentRef**: parent reference field name
 
-returns an array of parent rows containing children rows in **children** property
+returns a tree of records — an array of parent rows containing children rows in **children** property
     
