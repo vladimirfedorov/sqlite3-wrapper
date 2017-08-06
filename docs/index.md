@@ -71,14 +71,67 @@ Examples above effectively become `where parentId = 8341 and isLeaf = 1`.
     - **error**: `sqlite3` error
     - **rows**: array of rows that match the query
 
-## group(params)
-**group** function returns groupped rows in one of possible ways:
+Example:
 
+```javascript
+db.select({table: 'pages', order: 'name asc', limit: 10},  function(e, rows) {
+    if (e) console.error(e)
+    console.log('db.select:')
+    console.log(rows)
+})
+```
+
+Console:
+    
+    db.select:
+    [ { id: 3, name: 'about', category: 'b', parent: null },
+      { id: 2, name: 'blog', category: null, parent: null },
+      { id: 1, name: 'home', category: 'a', parent: null } ]
+
+## group(params)
+
+**group** function returns groupped rows in one of possible ways:
 - **params**: object with parameters:
     - **rows**: database rows
     - **by**: field name
 
 returns an object with **by** field values as keys and array of matching rows with corresponding field value as values
+
+Example:
+
+```javascript
+db.select({table: 'pages'}, function(e, rows) {
+    var grouped = db.group({rows: rows, by: 'category'})
+    console.log('db.select:')
+    console.log(rows)
+    console.log('db.group - records grouped by category')
+    for (k in grouped) {
+        console.log(k + ':')
+        console.log(grouped[k])
+    }
+})
+```
+
+Console:
+
+    db.select:
+    [ { id: 1, name: 'home', category: 'a', parent: null },
+      { id: 2, name: 'blog', category: 'a', parent: null },
+      { id: 3, name: 'about', category: 'b', parent: null },
+      { id: 4, name: 'contacts', category: null, parent: 3 },
+      { id: 5, name: 'company', category: null, parent: 3 },
+      { id: 6, name: 'invalid', category: null, parent: 6 } ]
+    db.group - records grouped by category
+    a:
+    [ { id: 1, name: 'home', category: 'a', parent: null },
+      { id: 2, name: 'blog', category: 'a', parent: null } ]
+    b:
+    [ { id: 3, name: 'about', category: 'b', parent: null } ]
+    :
+    [ { id: 4, name: 'contacts', category: null, parent: 3 },
+      { id: 5, name: 'company', category: null, parent: 3 },
+      { id: 6, name: 'invalid', category: null, parent: 6 } ]
+
 
 - **params**: object with parameters:
     - **rows**: database rows
@@ -87,7 +140,46 @@ returns an object with **by** field values as keys and array of matching rows wi
     - **parentRef**: parent reference field name
 
 returns a tree of records — an array of parent rows containing children rows in **children** property
-    
+
+Example:
+
+```javascript
+db.select({table: 'pages'}, function(e, rows) {
+    var tree = db.group({rows: rows, children: "children", parentId: "id", parentRef: "parent"})
+    console.log('db.select:')
+    console.log(rows)
+    console.log('db.group - tree of records')
+    console.log(tree)
+})
+```
+
+Console:
+
+    db.select:
+    [ { id: 1, name: 'home', category: 'a', parent: null, children: [] },
+      { id: 2, name: 'blog', category: 'a', parent: null, children: [] },
+      { id: 3,
+        name: 'about',
+        category: 'b',
+        parent: null,
+        children: [ [Object], [Object] ] },
+      { id: 4,
+        name: 'contacts',
+        category: null,
+        parent: 3,
+        children: [] },
+      { id: 5, name: 'company', category: null, parent: 3, children: [] },
+      { id: 6, name: 'invalid', category: null, parent: 6 } ]
+    db.group - tree of records
+    [ { id: 1, name: 'home', category: 'a', parent: null, children: [] },
+      { id: 2, name: 'blog', category: 'a', parent: null, children: [] },
+      { id: 3,
+        name: 'about',
+        category: 'b',
+        parent: null,
+        children: [ [Object], [Object] ] } ]
+
+
 ## update(table, where, changes, callback)
 
 - **table**: table name
@@ -96,17 +188,65 @@ returns a tree of records — an array of parent rows containing children rows i
 - **callback** - (error, changes)
     - **error**: `sqlite3` error
     - **changes**: number of rows changed
-    
+
+Example:
+
+```javascript
+db.update('pages', {id: 2}, {category: 'a'}, function(e, n) {
+    if (e) console.error(e)
+    console.log('db.update number of rows updated:')
+    console.log(n)
+})
+```
+
+Console:
+
+    b.update number of rows updated:
+    1
+
+
 ## insert(table, row, callback)
 - **table**: table name
 - **row**: an object to insert to the database, e. g. `{username: "John", password: "12345"}`
 - **callback** - (error, id)
     - **error**: `sqlite3` error
     - **id**: id of the new row created, 0 if error
-    
+
+Example:
+
+```javascript
+db.insert('pages', {id: 4, name: 'contacts'}, function(e, id) {
+    if (e) console.error(e)
+    console.log('db.insert created id:')
+    console.log(id)
+})
+```
+
+Console:
+
+    db.insert created id:
+    4
+
 ## delete(table, where, callback)
 - **table**: table name
 - **where**: `where` object
 - **callback** - (error, changes)
     - **error**: `sqlite3` error
     - **changes**: number of rows deleted
+
+Example:
+
+```javascript
+db.delete('pages', {id: 4}, function(e, n) {
+    if (e) console.error(e)
+    console.log('db.delete number of rows deleted:')
+    console.log(n)
+})
+```
+
+Console:
+
+    db.delete number of rows deleted:
+    1
+
+
