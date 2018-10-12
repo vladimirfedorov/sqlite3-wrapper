@@ -1,24 +1,30 @@
-var sqlite = require('sqlite3').verbose(),
-    db,
-    self_name = 'sqlite3-wrapper',
+'use strict'
+
+const sqlite = require('sqlite3').verbose(),
+      self_name = 'sqlite3-wrapper',
+      isString = (o) => Object.prototype.toString.call(o) === '[object String]',
+      isObject = (o) => Object.prototype.toString.call(o) === '[object Object]',
+      isArray  = (o) => Object.prototype.toString.call(o) === '[object Array]'
+    
+let db, 
     logQueries = false
 
-module.exports.open = function(databaseName) {
+module.exports.open = (databaseName, mode) => {
     if (db) db.close()
-    db = new sqlite.Database(databaseName)
+    db = new sqlite.Database(databaseName, mode)
     return this
 }
 
-module.exports.close = function() {
+module.exports.close = () => {
     if (db) db.close()
     return this
 }
 
-module.exports.database = function() {
+module.exports.database = () => {
     return db
 }
 
-module.exports.logQueries = function(b) {
+module.exports.logQueries = (b) => {
     logQueries = b
     return this
 }
@@ -37,121 +43,146 @@ module.exports.logQueries = function(b) {
 //      2) an object with properties:
 //         .clause with a query string (e.g. "name like ? OR surname like ?"), 
 //         .params with parameter values
-module.exports.select = function(params, cb) {
+module.exports.select = (params, cb) => {
+    const fn = (resolve, reject) => {
+        let tableString  = '',
+            whereObj = {},
+            queryParams = [],
+            fieldsString = '',
+            limitString  = '',
+            offsetString = '',
+            orderString  = '',
+            queryString  = ''
+        
+        if (db === undefined) return reject(`Database is not specified`)
 
-    var tableString  = '',
-        whereObj = {},
-        queryParams = [],
-        fieldsString = '',
-        limitString  = '',
-        offsetString = '',
-        orderString  = '',
-        queryString  = ''
-    
-    if (db === undefined) {
-        console.log('Database is not specified')
-        return
-    }
-    
-    if (typeof params === 'string') {
-        queryString = params
-    } else if (typeof params === 'object') {
-        tableString = safeName(params.table || '');
-        if (tableString === '') {
-            console.error('Table is not specified ', params)
-            if (cb) cb(undefined, [])
-            return
+        if (isString(params)) {
+            queryString = params
+        } else if (isObject(params)) {
+            tableString = safeName(params.table || '');
+            if (tableString === '') return reject(`Table is not specified`)
+            fieldsString = (isArray(params.fields) ? params.fields.join(', ') : params.fields) || '*'
+            whereObj = whereStringParams(params.where || '')
+            limitString = (params.limit && ' limit ' + params.limit) || ''
+            offsetString = (params.offset && ' offset ' + params.offset) || ''
+            orderString = (params.order && ' order by ' + params.order) || ''
+            queryString = 'select ' + fieldsString + ' from ' + tableString + whereObj.string + orderString + limitString + offsetString
+            queryParams = whereObj.params
+        } else {
+            return reject('First argument in select must be either a string or an object')
         }
-        fieldsString = (Object.prototype.toString.call(params.fields) === '[object Array]' ? params.fields.join(', ') : params.fields) || '*'
-        whereObj = makeWhereStringAndParams(params.where || '')
-        limitString = (params.limit && ' limit ' + params.limit) || ''
-        offsetString = (params.offset && ' offset ' + params.offset) || ''
-        orderString = (params.order && ' order by ' + params.order) || ''
-        queryString = 'select ' + fieldsString + ' from ' + tableString + whereObj.string + orderString + limitString + offsetString
-        queryParams = whereObj.params
-    } else {
-        console.log('First argument in select must be either a string or an object')
-        if (cb) cb(undefined, [])
-        return
+        
+        if (logQueries) console.time(`${queryString}, ${queryParams}`)
+        db.all(queryString, queryParams, (err, rows) => {
+            if (logQueries) console.timeEnd(`${queryString}, ${queryParams}`)
+            if (err) return reject(err)
+            resolve(rows)
+        })
     }
-    
-    if (logQueries) console.log(queryString, queryParams)
-    db.all(queryString, queryParams, cb)
+    return cb ? fn(result => cb(null, result), err => cb(err)) : new Promise(fn)
 }
 
-module.exports.insert = function(table, record, cb) {
-    var queryString = '',
-        tableString = '',
-        fields = [],
-        fieldsValues = [],
-        queryParams = [],
-        recordObj = record || {},
-        k
-    
-    tableString = safeName(table);
-    for (k in recordObj)  {
-        fields.push(k)
-        fieldsValues.push('?')
-        queryParams.push(record[k])
+module.exports.insert = (table, record, cb) => {
+    const fn = (resolve, reject) => {
+        let queryString = '',
+            tableString = '',
+            fields = [],
+            fieldsValues = [],
+            queryParams = [],
+            recordObj = record || {}
+
+        tableString = safeName(table);
+        for (let k in recordObj)  {
+            fields.push(k)
+            fieldsValues.push('?')
+            queryParams.push(record[k])
+        }
+        queryString = 'insert into ' + tableString + ' (' +  fields.join(', ') + ') values (' + fieldsValues.join(', ') + ')'
+        
+        if (logQueries) console.time(`${queryString}, ${queryParams}`)
+        db.run(queryString, queryParams, function(err) {
+            if (logQueries) console.timeEnd(`${queryString}, ${queryParams}`)
+            if (err) return reject(err)
+            resolve(this.lastID)
+        })
     }
-    queryString = 'insert into ' + tableString + ' (' +  fields.join(', ') + ') values (' + fieldsValues.join(', ') + ')'
-    
-    if (logQueries) console.log(queryString, queryParams)
-    db.run(queryString, queryParams, function(error){
-        if (cb) cb(error, this.lastID)
-    })
+    return cb ? fn(result => cb(null, result), err => cb(err)) : new Promise(fn)
 }
 
-module.exports.update = function(table, where, record, cb) {
-    var recordObj = record || {},
-        queryString = '',
-        tableString = safeName(table),
-        whereObj = makeWhereStringAndParams(where),
-        fields = [],
-        queryParams = [],
-        k
-    
-    if (tableString === undefined) {
-        logError('update', 'table is undefined')
-        if (cb) cb(undefined, 0)
-        return
-    }
+module.exports.update = (table, where, record, cb) => {
+    const fn = (resolve, reject) => {
+        let recordObj = record || {},
+            queryString = '',
+            tableString = safeName(table),
+            whereObj = whereStringParams(where),
+            fields = [],
+            queryParams = []
         
-    for (k in recordObj) {
-        fields.push(k + ' = ?')
-        queryParams.push(recordObj[k])
-    }
-    
-    if (fields.length === 0) {
-        if (cb) cb(undefined, 0)
-        return;
-    }
-    
-    queryParams = queryParams.concat(whereObj.params)
-    queryString = 'update ' + tableString + ' set ' + fields.join(', ') + whereObj.string
+        if (tableString === undefined) return reject(`Table is not specified`)
+            
+        for (let k in recordObj) {
+            fields.push(k + ' = ?')
+            queryParams.push(recordObj[k])
+        }
         
-    if (logQueries) console.log(queryString, queryParams)
-    db.run(queryString, queryParams, function(error) {
-        if (cb) cb(error, this.changes)
-    });
+        if (fields.length === 0) return resolve(0)
+        
+        queryParams = queryParams.concat(whereObj.params)
+        queryString = 'update ' + tableString + ' set ' + fields.join(', ') + whereObj.string
+            
+        if (logQueries) console.time(`${queryString}, ${queryParams}`)
+        db.run(queryString, queryParams, function(err) {
+            if (logQueries) console.timeEnd(`${queryString}, ${queryParams}`)
+            if (err) return reject(err)
+            resolve(this.changes)
+        })
+    }
+    return cb ? fn(result => cb(null, result), err => cb(err)) : new Promise(fn)
 }
 
-module.exports.delete = function(table, where, cb) {
-    var tableString = safeName(table),
-        whereObj = makeWhereStringAndParams(where),
-        queryString = ''
+module.exports.delete = (table, where, cb) => {
+    const fn = (resolve, reject) => {
+        let tableString = safeName(table),
+            whereObj = whereStringParams(where),
+            queryString = ''
 
-    if (tableString === undefined) {
-        logError('delete', 'table is undefined')
-        if (cb) cb(undefined, 0)
-        return
+        if (tableString === undefined) return reject(`Table is not specified`)
+
+        queryString = 'delete from ' + tableString + whereObj.string
+        if (logQueries) console.time(`${queryString}`)
+        db.run(queryString, whereObj.params, function(err) {
+            if (logQueries) console.timeEnd(`${queryString}`)
+            if (err) return reject(err)
+            resolve(this.changes)
+        })
     }
-        
-    queryString = 'delete from ' + tableString + whereObj.string
-    if (logQueries) console.log(queryString, whereObj.params)
-    db.run(queryString, whereObj.params, function(error) {
-        if (cb) cb(error, this.changes)
-    })
+    return cb ? fn(result => cb(null, result), err => cb(err)) : new Promise(fn)
+}
+
+// Wraps Database#run(sql, [param, ...], [callback]) into a Promise
+module.exports.run = (sql, params, cb) => {
+    const fn = (resolve, reject) => {
+        if (logQueries) console.time(`${sql} ${params}`)
+        db.run(sql, params, function(err) {
+            if (logQueries) console.timeEnd(`${sql} ${params}`)
+            if (err) return reject(err)
+            resolve(ths.changes)
+        })    
+    }
+    return cb ? fn(result => cb(null, result), err => cb(err)) : new Promise(fn)
+}
+
+// Wraps Database#exec(sql, [callback]) into a Promise
+module.exports.exec = (sql, cb) => {
+    const fn = (resolve, reject) => {
+        if (logQueries) console.time(`${sql}`)
+        db.exec(sql, function(err) {
+            if (logQueries) console.timeEnd(`${sql}`)
+            if (err) return reject(err)
+            resolve()
+        })    
+    }
+    return cb ? fn(result => cb(), err => cb(err)) : new Promise(fn)
 }
 
 // Group table rows
@@ -258,12 +289,11 @@ function safeName(name) {
 }
 
 // Converts where clause object to where.string and where.params to use in query
-function makeWhereStringAndParams(where) {
-    var whereObj = where || {},
+function whereStringParams(where) {
+    let whereObj = where || {},
         result = {string: '', params: []},
-        fields = [],
-        k
-    
+        fields = []
+
     // Two cases of where object: 
     // 1) simple where object with keys for field names and values for field values
     // 2) .clause with a query string (e.g. "name like ? OR surname like ?"), .params with parameter values
@@ -271,7 +301,7 @@ function makeWhereStringAndParams(where) {
         result.string = ' where ' + whereObj.clause
         result.params = whereObj.params || []
     } else {
-        for (k in whereObj) {
+        for (let k in whereObj) {
             fields.push(k + ' = ?')
             result.params.push(whereObj[k])
         }
