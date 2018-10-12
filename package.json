@@ -1,7 +1,7 @@
 {
     "name": "sqlite3-wrapper",
-    "version": "1.0.2",
-    "description": "Sweet sqlite3 wrapper that uses objects instead of strings to query records.",
+    "version": "1.0.3",
+    "description": "sqlite3 wrapper that uses objects instead of strings to query records.",
     "keywords": [
         "sqlite",
         "sqlite3",
@@ -21,11 +21,11 @@
     },
     "main": "index.js",
     "dependencies": {
-        "sqlite3": "~3"
+        "sqlite3": "^4.0.2"
     },
     "engines": {
         "node": "*"
     },
-    "author": "Vladimir Fedorov (me@vladimirfedorov.com)",
+    "author": "Vladimir Fedorov (hello@vladimirfedorov.com)",
     "license": "MIT"
 }
