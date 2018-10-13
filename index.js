@@ -166,7 +166,7 @@ module.exports.run = (sql, params, cb) => {
         db.run(sql, params, function(err) {
             if (logQueries) console.timeEnd(`${sql} ${params}`)
             if (err) return reject(err)
-            resolve(ths.changes)
+            resolve(this.changes)
         })    
     }
     return cb ? fn(result => cb(null, result), err => cb(err)) : new Promise(fn)
