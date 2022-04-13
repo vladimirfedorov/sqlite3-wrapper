@@ -97,7 +97,7 @@ module.exports.insert = (table, record, cb) => {
             fieldsValues.push('?')
             queryParams.push(record[k])
         }
-        queryString = 'insert into ' + tableString + ' (' +  fields.join(', ') + ') values (' + fieldsValues.join(', ') + ')'
+        queryString = 'insert into ' + tableString + (recordObj.length == 0 ? ' default values' : ' (' +  fields.join(', ') + ') values (' + fieldsValues.join(', ') + ')');
         
         if (logQueries) console.time(`${queryString}, ${queryParams}`)
         db.run(queryString, queryParams, function(err) {
